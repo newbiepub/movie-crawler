@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+<body>
+    {{#movies}}
+    <div style="margin-bottom: 20px; display: block;">
+        <b> {{title}} </b>
+        {{#mediaUrls}}
+        <div>
+            <p>Resolution {{resolution}}</p>
+            <a href="{{url}}">Watch Movie</a>
+        </div>
+        {{/mediaUrls}}
+    </div>
+
+    {{/movies}}
+</body>
+</html>
