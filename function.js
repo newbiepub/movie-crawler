@@ -23,6 +23,16 @@ class CrawlerFunc {
         const phimmoi = new Phimmoi();
         phimmoi.crawlPhimMoi(callback);
     }
+
+    static requestStream (url) {
+        const phimmoi = new Phimmoi();
+        return new Promise((resolve, reject) => {
+            phimmoi.getStreamLink(url).then((res) => resolve(res))
+                .catch (err => {
+                    reject(err);
+            })
+        })
+    }
 }
 
 export default CrawlerFunc

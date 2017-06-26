@@ -1,5 +1,7 @@
 import cheerio from "cheerio";
 import request from 'request';
+import rq from "request-promise";
+import async from "async";
 import _ from "lodash";
 import CryptoJS from "crypto-js";
 
@@ -23,11 +25,36 @@ class Phimmoi {
                 let $ = cheerio.load(html);
                 let listMovies = $('.movie-list-index .movie-item');
                 let MovieLinks = [];
-                _.each(listMovies, (movieItem) => {
-                    MovieLinks.push({title: movieItem.attribs.title, link: movieItem.attribs.href});
-                });
-                this.getMediaUrl(MovieLinks, (movies) => {
-                    callback(movies);
+                async.waterfall([
+                    /**
+                     * Get Movie Links
+                     * @param cb
+                     */
+                     (cb) => {
+                        let count = 0;
+                        _.each(listMovies, async (movieItem) => {
+                            try {
+                                let movieData = await this.crawlDetailMovie(movieItem.attribs.href);
+                                Object.assign(movieData, {link: movieItem.attribs.href});
+                                MovieLinks.push(movieData);
+                                if(count === listMovies.length - 1) {
+                                    cb(null, MovieLinks);
+                                }
+                                count++;
+                            } catch(e) {
+                                cb(e);
+                            }
+                        });
+                    }
+                ], (err, MovieLinks) => {
+                    if(!err) {
+                        this.getMediaUrl(MovieLinks, (movies) => {
+                            callback(movies);
+                        });
+                    } else {
+                        console.log(err);
+                        callback({})
+                    }
                 });
             } else {
                 console.log(err);
@@ -36,8 +63,36 @@ class Phimmoi {
         })
     }
 
-    crawlWithCategory() {
-
+    /**
+     * Crawl Movie Detail
+     * @param url
+     * @returns {Promise}
+     */
+    crawlDetailMovie(url) {
+        return new Promise((resolve, reject) => {
+            request(`${this.baseUrl}${url}`, this.requestOption, (err, res, html) => {
+                if (!err && res.statusCode === 200) {
+                    let $ = cheerio.load(html);
+                    let movieImage = $('.movie-l-img').children("img")[0].attribs.src,
+                        movieTitle = $('.movie-title .title-1').text(),
+                        movieImdb = $('.movie-meta-info .imdb').text(),
+                        duration = $(".movie-meta-info .movie-dt:contains('Thời lượng:')").next().text(),
+                        category = $(".movie-meta-info .dd-cat").text(),
+                        description = $("#film-content").text();
+                    let movieData = {
+                        title: movieTitle,
+                        image: movieImage,
+                        imdb: movieImdb,
+                        duration,
+                        category,
+                        description
+                    };
+                    resolve(movieData);
+                } else {
+                    reject(err);
+                }
+            });
+        });
     }
 
     getMediaUrl(listUrl, callback) {
@@ -77,12 +132,19 @@ class Phimmoi {
     findMedia(url, callback) {
         return request(`${this.baseUrl}${url}xem-phim.html`, this.requestOption, (err, res, html) => {
             if (!err && res.statusCode === 200) {
-                let $ = cheerio.load(html);
-                let media = $('script[onload="checkEpisodeInfoLoaded(this)"]').attr("src");
-                console.log(`Getting PhimMoi Media: \n ${media} \n\n`,);
-                callback(media.replace("javascript", "json"));
+                try {
+                    let $ = cheerio.load(html);
+                    let media = $('script[onload="checkEpisodeInfoLoaded(this)"]').attr("src");
+                    if (media != undefined) {
+                        console.log(`Getting PhimMoi Media: \n ${media} \n\n`,);
+                        callback(media.replace("javascript", "json"));
+                    }
+                } catch (e) {
+                    console.log("Catch Error: ", e);
+                    callback({err: err});
+                }
             } else {
-                console.log(err);
+                console.log("Get Error: ", err);
                 callback({err: err});
             }
         });
@@ -90,17 +152,31 @@ class Phimmoi {
 
     decodeAES(url, password) {
         try {
-            if(url.indexOf(".com") == -1) {
+            if (!url.match(/[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi)) {
                 let decrytData = CryptoJS.AES.decrypt(url.toString(), password);
                 return decrytData.toString(CryptoJS.enc.Utf8);
             }
             return url
 
         } catch (e) {
-            console.log(url);
             console.log(e);
+            return url;
         }
-        return "";
+    }
+
+    getStreamLink (url) {
+        return new Promise((resolve, reject) => {
+            request(url, this.requestOption, (err, res, body) => {
+                if(err) {
+                    console.log(err);
+                    reject(err);
+                } else {
+                    console.log(res.headers);
+                    resolve({response: res, body});
+                }
+            })
+        })
+
     }
 }
 
