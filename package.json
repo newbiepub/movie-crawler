@@ -17,6 +17,7 @@
     "consolidate": "^0.14.5",
     "cookie-parser": "^1.4.3",
     "crypto-js": "^3.1.9-1",
+    "csurf": "^1.9.0",
     "finalhandler": "^1.0.1",
     "helmet": "^3.5.0",
     "init": "^0.1.2",

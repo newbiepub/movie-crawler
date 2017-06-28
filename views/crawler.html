@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crawler</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css"/>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script>
+        function copyToClipboard(instance) {
+            try {
+                window.prompt("Sao chép link phim: Ctrl+C, Enter", instance.getAttribute("data-movie-url"));
+            } catch(err) {
+                console.log(err);
+            }
+        }
+    </script>
+</head>
+<body>
+<div style="display: flex; height: 100px; justify-content: center; align-items: center;">
+    <form action="/crawler" method="GET" style="position: absolute; left: 30px; right: 30px;">
+        <div style="display: flex; flex-direction: column">
+            <input type="hidden" name="_csrf" value="{{csrfToken}}">
+            <input class="form-control" style="margin-bottom: 10px;" type="text" name="url"
+                   placeholder="http://www.phimmoi.net/phim/thi-tran-twin-peaks-2017-phan-1-5333/">
+            <div style="display: flex; flex-direction: row; justify-content: center">
+                <button type="submit" class="btn btn-primary">Get Link</button>
+            </div>
+        </div>
+    </form>
+</div>
+{{#movie}}
+<div style="display: flex; padding: 30px;">
+    <div style="display: flex; flex-direction: row;">
+        <div style="margin-right: 20px">
+            <image src="{{image}}"></image>
+        </div>
+        <div>
+            <div>
+                <b>Tựa Đề:</b>  <h1> {{title}}</h1>
+            </div>
+            <div>
+                <b>Thể Loại: </b>  <p>{{category}}</p>
+            </div>
+            <div>
+                <b>Ngày Phát Hành: </b>  <p>{{pubDate}}</p>
+            </div>
+            <div>
+                <b>Năm: </b>  <p>{{year}}</p>
+            </div>
+            <div>
+                <b>Thời Lượng:</b>  <p>{{duration}}</p>
+            </div>
+            <div>
+                <b>Điểm IMDb:</b>  <p style="padding: 10px; border-radius: 5px; background-color: yellow; display: inline">{{imdb}}</p>
+            </div>
+            <div>
+                <b>Mô tả: </b>  <p>{{description}}</p>
+            </div>
+            <div>
+                <b>Link Phim: </b>
+            </div>
+            <div style="display: flex; flex-direction: row;">
+                {{#mediaUrls}}
+                    <input onclick="copyToClipboard(this);" style="margin-right: 10px;" type="button" data-movie-url="{{url}}" value="{{resolution}}" class="movie-link btn">
+                {{/mediaUrls}}
+            </div>
+        </div>
+    </div>
+
+</div>
+{{/movie}}
+</body>
+</html>

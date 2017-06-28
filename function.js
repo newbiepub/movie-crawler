@@ -3,6 +3,7 @@ import cheerio from "cheerio"
 import _ from "lodash";
 import Config from "./config";
 import Phimmoi from './videos/phimmoi';
+import PhimVuiHD from "./videos/phimvuihd";
 
 const gotOptions = {
     headers: {
@@ -30,6 +31,26 @@ class CrawlerFunc {
             phimmoi.getStreamLink(url).then((res) => resolve(res))
                 .catch (err => {
                     reject(err);
+            })
+        })
+    }
+
+    static async crawlMovieWithUrl(url) {
+        try {
+            const phimmoi = new Phimmoi();
+            return phimmoi.crawlFromUrl(url);
+        }catch(err) {
+            console.log("Error at crawlMovieWithUrl", err);
+        }
+    }
+
+    static crawlerVuiHD() {
+        return new Promise((resolve, reject) => {
+            const phimvui = new PhimVuiHD();
+            phimvui.getMovie().then(res => {
+                resolve(res);
+            }).catch(err => {
+                reject(err);
             })
         })
     }
