@@ -87,7 +87,7 @@
                             <p style="margin-bottom: 10px;">Ep: {{name}}</p>
                             <div style="display: flex; flex-direction: row;">
                                 {{#mediaUrls}}
-                                <input onclick="copyToClipboard(this);" style="margin-right: 10px;" type="button" data-movie-url="{{url}}" value="{{resolution}}" class="movie-link btn">
+                                    <a target="_blank" href="/crawler/episode?name={{name}}&url={{mediaUrls}}">Get Link</a>
                                 {{/mediaUrls}}
                             </div>
                         {{/epUrls}}

@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js --exec babel-node --presets es2016-node5,stage-3",
+    "start": "nodemon lib/index.js --exec babel-node --presets es2016-node5,stage-3",
+    "build": "babel lib -d dist",
+    "serve": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Lam Nguyen",
@@ -35,6 +37,7 @@
     "babel-cli": "^6.24.1",
     "babel-preset-es2016-node5": "^1.1.2",
     "babel-preset-stage-3": "^6.24.1",
+    "babel-register": "^6.11.6",
     "nodemon": "^1.11.0"
   }
 }
