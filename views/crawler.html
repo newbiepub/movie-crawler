@@ -60,6 +60,11 @@
             <div>
                 <b>Thời Lượng:</b>  <p>{{duration}}</p>
             </div>
+            {{#numberOfEp}}
+            <div>
+                <b>Số Tập:</b>  <p>{{numberOfEp}}</p>
+            </div>
+            {{/numberOfEp}}
             <div>
                 <b>Điểm IMDb:</b>  <p style="padding: 10px; border-radius: 5px; background-color: yellow; display: inline">{{imdb}}</p>
             </div>
@@ -73,6 +78,21 @@
                 {{#mediaUrls}}
                     <input onclick="copyToClipboard(this);" style="margin-right: 10px;" type="button" data-movie-url="{{url}}" value="{{resolution}}" class="movie-link btn">
                 {{/mediaUrls}}
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                {{#movieEpisodes}}
+                    <div>
+                        <h2>{{title}}</h2>
+                        {{#epUrls}}
+                            <p style="margin-bottom: 10px;">Ep: {{name}}</p>
+                            <div style="display: flex; flex-direction: row;">
+                                {{#mediaUrls}}
+                                <input onclick="copyToClipboard(this);" style="margin-right: 10px;" type="button" data-movie-url="{{url}}" value="{{resolution}}" class="movie-link btn">
+                                {{/mediaUrls}}
+                            </div>
+                        {{/epUrls}}
+                    </div>
+                {{/movieEpisodes}}
             </div>
         </div>
     </div>

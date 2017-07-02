@@ -81,6 +81,7 @@ class Phimmoi {
                         pubDate = $(".movie-meta-info .movie-dt:contains('Ngày ra rạp:')").next().text(),
                         year = $(".movie-meta-info .movie-dt:contains('Năm:')").next().text(),
                         category = $(".movie-meta-info .dd-cat").text(),
+                        numberOfEp = $(".movie-meta-info .movie-dt:contains('Số tập:')").next().text(),
                         description = $("#film-content").text();
                     let movieData = {
                         title: movieTitle,
@@ -90,6 +91,7 @@ class Phimmoi {
                         category,
                         description,
                         pubDate,
+                        numberOfEp,
                         year
                     };
                     resolve(movieData);
@@ -106,18 +108,127 @@ class Phimmoi {
         });
     }
 
+    async getMovieEp (serverEpisode) {
+        try {
+            let episodes = [];
+            for (let server of serverEpisode) {
+                let episode = {epUrls: []};
+                episode.title = server.title;
+                for(let ep of server.listEp) {
+                    let getMediaUrl = await this.findMediaServer(ep.url),
+                        media = await this.getMediaUrls(getMediaUrl, {});
+                    episode.epUrls.push({name: ep.title, mediaUrls: media.mediaUrls});
+                }
+                episodes.push(episode);
+            }
+            return episodes;
+        } catch(err) {
+            console.log("Error at getMovieEp ", err);
+        }
+    }
+
     async crawlFromUrl(url) {
         try {
             url = decodeURIComponent(url).replace('http://www.phimmoi.net/', "");
             url = url.replace("xem-phim.html", "");
+            let movie = {};
             let movieData = await this.crawlDetailMovie(url);
             Object.assign(movieData, {link: url});
-            let getMediaUrl = await this.findMedia(url),
+            let serverEpisode = await this.getServerEpisode(url);
+            if(serverEpisode.length) {
+                let movieEpisodes = await this.getMovieEp(serverEpisode);
+                movie = movieData;
+                movie.movieEpisodes = movieEpisodes;
+            } else {
+                let getMediaUrl = await this.findMedia(url);
                 movie = await this.getMediaUrls(getMediaUrl, movieData);
+            }
             return movie;
         } catch (err) {
             console.log("Error at crawlFromUrl ", err);
         }
+    }
+
+    getServerEpisode(url) {
+        return new Promise((resolve, reject) => {
+            request(`${this.baseUrl}${url}xem-phim.html`, this.requestOption, (err, res, html) => {
+                if(!err && res.statusCode === 200) {
+                    try {
+                        let $ = cheerio.load(html),
+                            serverEpisodeOutput = [];
+                        /**
+                         *  Movie
+                         */
+                        let list_server = $(".list-server .server .server-list");
+                        if(list_server.length) {
+                            _.each(list_server, (server) => {
+                                let list_episode = server.children.reduce((episodes, item) => {
+                                    let list_server_item = {};
+                                    _.each(item.children, (nodeDetail) => {
+                                        if(nodeDetail.name === "h3") {
+                                            list_server_item.title = nodeDetail.children[0].data;
+                                        }
+                                        if(nodeDetail.attribs.class === "list-episode") {
+                                            list_server_item.listEp = nodeDetail.children.reduce((listUrl, nodeDetail) => {
+                                                try {
+                                                    let name = nodeDetail.children[0].children[0].data,
+                                                        url = nodeDetail.children[0].attribs.href;
+                                                    listUrl.push({title: name, url});
+                                                    return listUrl;
+                                                } catch (err) {
+                                                    console.log(err);
+                                                }
+                                            }, []);
+                                        }
+                                    });
+                                    episodes.push(list_server_item);
+                                    return episodes;
+                                }, []);
+                                serverEpisodeOutput = serverEpisodeOutput.concat(list_episode);
+                            })
+                        } else {
+                            /**
+                             * Movie With Episodes
+                             * @type {*}
+                             */
+                            list_server = $(".list-server");
+                            _.each(list_server, (server) => {
+                                let list_episode = server.children.reduce((episodes, item) => {
+                                    let list_server_item = {};
+                                    _.each(item.children, (nodeDetail) => {
+                                        if(nodeDetail.name === "h3") {
+                                            list_server_item.title = nodeDetail.children[0].data;
+                                        }
+                                        if(nodeDetail.attribs.class === "list-episode") {
+                                            list_server_item.listEp = nodeDetail.children.reduce((listUrl, nodeDetail) => {
+                                                try {
+                                                    let name = nodeDetail.children[0].children[0].data,
+                                                        url = nodeDetail.children[0].attribs.href;
+                                                    listUrl.push({title: name, url});
+                                                    return listUrl;
+                                                } catch (err) {
+                                                    console.log(err);
+                                                }
+                                            }, []);
+                                        }
+                                    });
+                                    episodes.push(list_server_item);
+                                    return episodes;
+                                }, []);
+                                serverEpisodeOutput = serverEpisodeOutput.concat(list_episode);
+                            })
+                        }
+                        resolve(serverEpisodeOutput);
+                    } catch(e) {
+                        console.log(e);
+                        reject({err: {message: "Error at getServerEpisode"}})
+                    }
+                } else {
+                    console.log(err);
+                    reject({err: {message: "Error at getServerEpisode"}})
+                }
+            })
+        })
     }
 
     getMediaUrls(media, movie) {
@@ -186,9 +297,34 @@ class Phimmoi {
         })
     }
 
+
+
     findMedia(url) {
         return new Promise((resolve, reject) => {
             request(`${this.baseUrl}${url}xem-phim.html`, this.requestOption, (err, res, html) => {
+                if (!err && res.statusCode === 200) {
+                    try {
+                        let $ = cheerio.load(html);
+                        let media = $('script[onload="checkEpisodeInfoLoaded(this)"]').attr("src");
+                        if (media != undefined) {
+                            console.log(`Getting PhimMoi Media: \n ${media} \n\n`,);
+                            resolve(media.replace("javascript", "json"));
+                        }
+                    } catch (e) {
+                        console.log("Catch Error: ", e);
+                        reject({err: err});
+                    }
+                } else {
+                    console.log("Get Error: ", err);
+                    reject({err: err});
+                }
+            });
+        })
+    };
+
+    findMediaServer(url) {
+        return new Promise((resolve, reject) => {
+            request(`${this.baseUrl}${url}`, this.requestOption, (err, res, html) => {
                 if (!err && res.statusCode === 200) {
                     try {
                         let $ = cheerio.load(html);
