@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon lib/index.js --exec babel-node --presets es2016-node5,stage-3",
-    "build": "babel lib -d dist",
+    "build": "babel lib -s -D -d dist",
     "serve": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
