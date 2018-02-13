@@ -1,4 +1,9 @@
 {
-  "presets": ["es2016-node5", "stage-3"],
-  "plugins": []
+  "presets": ["env", "stage-3"],
+  "env": {
+    "production": {
+      "presets": ["minify"]
+    }
+  },
+  "plugins": ["transform-runtime"]
 }
